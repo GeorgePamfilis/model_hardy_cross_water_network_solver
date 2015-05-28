@@ -47,11 +47,12 @@ def diameter_from_available(theoretical_diameter):
 
 
 def flow_correction_dq(df_hf, df_hf_q):
-            """
+    """
 
-            :type df_hf_q: float
-            """
-            return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
+    :type df_hf_q: float
+    :type df_hf: float
+    """
+    return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
 
 
 def add_string_from_list(*string_list):
