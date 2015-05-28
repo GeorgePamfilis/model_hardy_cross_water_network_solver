@@ -34,14 +34,6 @@ def diameter_from_available(theoretical_diameter):
     return theoretical_diameter
 
 
-def flow_correction_dq(df_hf, df_hf_q):
-    """
-
-    :type df_hf_q: float
-    :type df_hf: float
-    """
-    return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
-
 
 def add_string_from_list(*string_list):
     """
@@ -54,17 +46,6 @@ def add_string_from_list(*string_list):
     return null
 
 
-def u(q, d):
-    numerator = 4. * (q*10**-3)
-    denominator = ((d*10**-3) ** 2) * np.pi
-    return numerator / denominator
-
-
-def compute_speeds_for_each_loop(loops):
-    us = []
-    for loop in loops:
-        us.append(abs(u(loop['Q'], loop['D'])))
-    return us
 
 
 sheet_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
@@ -95,7 +76,8 @@ class HardyCross(object):
         self.max_velocity = 2.
         self.min_velocity = 0.6
 
-    def j_loss_10atm(self, d, q):
+    @staticmethod
+    def j_loss_10atm(d, q):
 
         """
         :param d: float
@@ -107,6 +89,26 @@ class HardyCross(object):
         j_losses = (8.21 * 10 ** -4) * (((d * 10 ** -3) * 0.905) ** -4.76) * (np.abs(q * 10 ** -3) ** 1.76)
         return j_losses
 
+    @staticmethod
+    def flow_correction_dq(df_hf, df_hf_q):
+        """
+
+        :type df_hf_q: float
+        :type df_hf: float
+        """
+        return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
+
+    @staticmethod
+    def u(q, d):
+        numerator = 4. * (q*10**-3)
+        denominator = ((d*10**-3) ** 2) * np.pi
+        return numerator / denominator
+
+    def compute_speeds_for_each_loop(self):
+        us = []
+        for loop in self.loops:
+            us.append(abs(self.u(loop['Q'], loop['D'])))
+        return us
 
     def locate_common_loops(self):
         for loop in self.loops:
@@ -128,9 +130,9 @@ class HardyCross(object):
                 loop['J'] = self.j_loss_10atm(loop['D'], loop['Q'])
                 loop['hf'] = np.copysign(loop['J'] * loop['L'], loop['Q'])
                 loop['hf/Q'] = loop['hf'] / loop['Q']
-                self.dqs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
+                self.dqs[i] = (self.flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] + self.dqs[i]
-                self.dqs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
+                self.dqs[i] = (self.flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] - np.dot(self.common_loops[i], self.dqs)
                 self.smallest_flow_rate.append(np.min(np.abs(loop['Q'])))
 
