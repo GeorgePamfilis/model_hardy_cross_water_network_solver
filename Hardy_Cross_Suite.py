@@ -4,16 +4,6 @@ import pandas as pd
 import re
 
 
-def j_loss_10atm(d, q):
-    """
-    :param d: float
-    :param q: float
-    d: diameter [mm]
-    q: flow rate [l/s]
-    j: losses [m]
-    """
-    j_losses = (8.21 * 10 ** -4) * (((d * 10 ** -3) * 0.905) ** -4.76) * (np.abs(q * 10 ** -3) ** 1.76)
-    return j_losses
 
 
 def diameter(q, u=0.8, show=0):
@@ -106,6 +96,19 @@ class HardyCross(object):
         self.max_velocity = 2.
         self.min_velocity = 0.6
 
+    def j_loss_10atm(self, d, q):
+
+        """
+        :param d: float
+        :param q: float
+        d: diameter [mm]
+        q: flow rate [l/s]
+        j: losses [m]
+        """
+        j_losses = (8.21 * 10 ** -4) * (((d * 10 ** -3) * 0.905) ** -4.76) * (np.abs(q * 10 ** -3) ** 1.76)
+        return j_losses
+
+
     def locate_common_loops(self):
         for loop in self.loops:
             self.common_loops.append(np.zeros((loop.shape[0], len(self.loops))))
@@ -123,7 +126,7 @@ class HardyCross(object):
     def run_hc(self):
         for run in range(self.runs):
             for i, loop in enumerate(self.loops):
-                loop['J'] = j_loss_10atm(loop['D'], loop['Q'])
+                loop['J'] = self.j_loss_10atm(loop['D'], loop['Q'])
                 loop['hf'] = np.copysign(loop['J'] * loop['L'], loop['Q'])
                 loop['hf/Q'] = loop['hf'] / loop['Q']
                 self.dqs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
