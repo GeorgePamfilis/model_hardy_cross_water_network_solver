@@ -34,7 +34,6 @@ def diameter_from_available(theoretical_diameter):
     return theoretical_diameter
 
 
-
 def add_string_from_list(*string_list):
     """
     :rtype : str
@@ -44,9 +43,6 @@ def add_string_from_list(*string_list):
     for string in string_list:
         null = null + string
     return null
-
-
-
 
 sheet_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
 loops = []
