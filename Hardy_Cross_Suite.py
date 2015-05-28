@@ -1,8 +1,7 @@
+import re
 
 import numpy as np
 import pandas as pd
-import re
-
 
 
 def diameter(q, u=0.8, show=0):
