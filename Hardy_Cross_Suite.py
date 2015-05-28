@@ -1,5 +1,4 @@
 import re
-
 import numpy as np
 import pandas as pd
 
@@ -10,6 +9,7 @@ for sheet_name in sheet_name_list:
 
 
 class HardyCross(object):
+
 
     def __init__(self, loops):
         self.runs = 100
@@ -128,13 +128,13 @@ def diameter_from_available(theoretical_diameter):
     return theoretical_diameter
 
 
-def diameter(q, u=0.8, show=0):
+def diameter(q, velocity_for_diameter=0.8, show=0):
     """
     Q: flow rate [l/s]
-    u: flow velocity m/s
+    velocity_for_diameter: flow velocity m/s
     D: diameter [mm]
     """
-    theoretical_diameter = np.sqrt((4 * np.abs(q) * 10 ** -3) / (np.pi * u)) * 10 ** 3
+    theoretical_diameter = np.sqrt((4 * np.abs(q) * 10 ** -3) / (np.pi * velocity_for_diameter)) * 10 ** 3
     if show:
         print 'The Theoretical Diameter is {}'.format(theoretical_diameter)
     available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
@@ -160,4 +160,4 @@ if __name__ == '__main__':
     hc.run_hc()
     hc.save_flows_to_file()
 
-input("Press enter to quit.")
+raw_input("Press enter to quit.")
