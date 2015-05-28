@@ -3,59 +3,10 @@ import re
 import numpy as np
 import pandas as pd
 
-
-def diameter(q, u=0.8, show=0):
-    """
-    Q: flow rate [l/s]
-    u: flow velocity m/s
-    D: diameter [mm]
-    """
-    theoretical_diameter = np.sqrt((4 * np.abs(q) * 10 ** -3) / (np.pi * u)) * 10 ** 3
-    if show:
-        print 'The Theoretical Diameter is {}'.format(theoretical_diameter)
-    available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
-    for i, D in enumerate(available_diameters):
-        if D < theoretical_diameter:
-            pass
-        else:
-            theoretical_diameter = D
-            break
-    return theoretical_diameter
-
-
-def diameter_from_available(theoretical_diameter):
-    available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
-    for i, D in enumerate(available_diameters):
-        if D < theoretical_diameter:
-            pass
-        else:
-            theoretical_diameter = D
-            break
-    return theoretical_diameter
-
-
-def add_string_from_list(*string_list):
-    """
-    :rtype : str
-
-    """
-    null = ''
-    for string in string_list:
-        null = null + string
-    return null
-
 sheet_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
 loops = []
 for sheet_name in sheet_name_list:
     loops.append(pd.read_excel('Data/Hardy_Cross_input.xlsx', sheetname=sheet_name))
-
-for loop in loops:
-    for i, Q in enumerate(loop['Q']):
-        loop['D'][i] = diameter(loop['Q'][i])
-
-for i, loop in enumerate(loops):
-    for j, section in enumerate(loop['Section']):
-        loop['Section'][j] = add_string_from_list(*sorted(re.findall('[A-Z]', section)))
 
 
 class HardyCross(object):
@@ -72,38 +23,19 @@ class HardyCross(object):
         self.max_velocity = 2.
         self.min_velocity = 0.6
 
-    @staticmethod
-    def j_loss_10atm(d, q):
+    def initial_operations(self):
+        for loop in self.loops:
+            for i, Q in enumerate(loop['Q']):
+                loop['D'][i] = diameter(loop['Q'][i])
 
-        """
-        :param d: float
-        :param q: float
-        d: diameter [mm]
-        q: flow rate [l/s]
-        j: losses [m]
-        """
-        j_losses = (8.21 * 10 ** -4) * (((d * 10 ** -3) * 0.905) ** -4.76) * (np.abs(q * 10 ** -3) ** 1.76)
-        return j_losses
-
-    @staticmethod
-    def flow_correction_dq(df_hf, df_hf_q):
-        """
-
-        :type df_hf_q: float
-        :type df_hf: float
-        """
-        return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
-
-    @staticmethod
-    def u(q, d):
-        numerator = 4. * (q*10**-3)
-        denominator = ((d*10**-3) ** 2) * np.pi
-        return numerator / denominator
+        for i, loop in enumerate(self.loops):
+            for j, section in enumerate(loop['Section']):
+                loop['Section'][j] = add_string_from_list(*sorted(re.findall('[A-Z]', section)))
 
     def compute_speeds_for_each_loop(self):
         us = []
         for loop in self.loops:
-            us.append(abs(self.u(loop['Q'], loop['D'])))
+            us.append(abs(u(loop['Q'], loop['D'])))
         return us
 
     def locate_common_loops(self):
@@ -123,12 +55,12 @@ class HardyCross(object):
     def run_hc(self):
         for run in range(self.runs):
             for i, loop in enumerate(self.loops):
-                loop['J'] = self.j_loss_10atm(loop['D'], loop['Q'])
+                loop['J'] = j_loss_10atm(loop['D'], loop['Q'])
                 loop['hf'] = np.copysign(loop['J'] * loop['L'], loop['Q'])
                 loop['hf/Q'] = loop['hf'] / loop['Q']
-                self.dqs[i] = (self.flow_correction_dq(loop['hf'], loop['hf/Q']))
+                self.dqs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] + self.dqs[i]
-                self.dqs[i] = (self.flow_correction_dq(loop['hf'], loop['hf/Q']))
+                self.dqs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] - np.dot(self.common_loops[i], self.dqs)
                 self.smallest_flow_rate.append(np.min(np.abs(loop['Q'])))
 
@@ -151,8 +83,79 @@ class HardyCross(object):
                 self.loops[t].to_excel(writer, sheet_name=sheet, index=None)
 
 
+def add_string_from_list(*string_list):
+    """
+    :rtype : str
+
+    """
+    null = ''
+    for string in string_list:
+        null = null + string
+    return null
+
+
+def flow_correction_dq(df_hf, df_hf_q):
+    """
+
+    :type df_hf_q: float
+    :type df_hf: float
+    """
+    return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
+
+
+def j_loss_10atm(d, q):
+
+    """
+    :param d: float
+    :param q: float
+    d: diameter [mm]
+    q: flow rate [l/s]
+    j: losses [m]
+    """
+    j_losses = (8.21 * 10 ** -4) * (((d * 10 ** -3) * 0.905) ** -4.76) * (np.abs(q * 10 ** -3) ** 1.76)
+    return j_losses
+
+
+def diameter_from_available(theoretical_diameter):
+    available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200.,
+                           225., 250., 280., 315., 355., 400.]
+    for i, D in enumerate(available_diameters):
+        if D < theoretical_diameter:
+            pass
+        else:
+            theoretical_diameter = D
+            break
+    return theoretical_diameter
+
+
+def diameter(q, u=0.8, show=0):
+    """
+    Q: flow rate [l/s]
+    u: flow velocity m/s
+    D: diameter [mm]
+    """
+    theoretical_diameter = np.sqrt((4 * np.abs(q) * 10 ** -3) / (np.pi * u)) * 10 ** 3
+    if show:
+        print 'The Theoretical Diameter is {}'.format(theoretical_diameter)
+    available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
+    for i, D in enumerate(available_diameters):
+        if D < theoretical_diameter:
+            pass
+        else:
+            theoretical_diameter = D
+            break
+    return theoretical_diameter
+
+
+def u(q, d):
+    numerator = 4. * (q*10**-3)
+    denominator = ((d*10**-3) ** 2) * np.pi
+    return numerator / denominator
+
+
 if __name__ == '__main__':
     hc = HardyCross(loops)
+    hc.initial_operations()
     hc.locate_common_loops()
     hc.run_hc()
     hc.save_flows_to_file()
