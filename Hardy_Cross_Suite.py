@@ -5,7 +5,6 @@ import re
 
 
 
-
 def diameter(q, u=0.8, show=0):
     """
     Q: flow rate [l/s]
