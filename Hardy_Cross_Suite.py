@@ -46,6 +46,7 @@ def flow_correction_dq(df_hf, df_hf_q):
 def add_string_from_list(*string_list):
     """
     :rtype : str
+
     """
     null = ''
     for string in string_list:
