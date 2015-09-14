@@ -2,26 +2,26 @@ import re
 import numpy as np
 import pandas as pd
 
-sheet_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
+loop_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
 
 loops = []
-for sheet_name in sheet_name_list:
-    loops.append(pd.read_excel('Data/Hardy_Cross_input.xlsx', sheetname=sheet_name))
+
+for loop_name in loop_name_list:
+    loops.append(pd.read_excel('Data/Hardy_Cross_input.xlsx', sheetname=loop_name))
 
 
 class HardyCross(object):
-
 
     def __init__(self, loops):
         self.runs = 100
         self.threshold = 1
         self.loops = loops
         self.common_loops = []
-        self.dqs = np.zeros(len(self.loops))
+        self.delta_Qs = np.zeros(len(self.loops))
         self.velocities = []
         self.new_D = []
         self.smallest_flow_rate = []
-        self.max_velocity = 2.
+        self.max_velocity = 2.0
         self.min_velocity = 0.6
 
     def initial_operations(self):
@@ -50,7 +50,7 @@ class HardyCross(object):
                     for k, section1 in enumerate(self.loops[i]['Section']):
                         for l, section2 in enumerate(self.loops[j]['Section']):
                             if section1 == section2:
-                                print 'loop {} @location {}, loop {} @location {} '.format(i, k, j, l)
+                                print('loop {} @location {}, loop {} @location {} '.format(i, k, j, l))
                                 self.common_loops[i][k][j] = 1
 
     def run_hc(self):
@@ -59,28 +59,28 @@ class HardyCross(object):
                 loop['J'] = j_loss_10atm(loop['D'], loop['Q'])
                 loop['hf'] = np.copysign(loop['J'] * loop['L'], loop['Q'])
                 loop['hf/Q'] = loop['hf'] / loop['Q']
-                self.dqs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
-                loop['Q'] = loop['Q'] + self.dqs[i]
-                self.dqs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
-                loop['Q'] = loop['Q'] - np.dot(self.common_loops[i], self.dqs)
+                self.delta_Qs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
+                loop['Q'] = loop['Q'] + self.delta_Qs[i]
+                self.delta_Qs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
+                loop['Q'] = loop['Q'] - np.dot(self.common_loops[i], self.delta_Qs)
                 self.smallest_flow_rate.append(np.min(np.abs(loop['Q'])))
 
-            largest_dq_flow_rate = np.max(abs(self.dqs))
+            largest_dq_flow_rate = np.max(abs(self.delta_Qs))
             if largest_dq_flow_rate / np.min(self.smallest_flow_rate) * 100 < self.threshold:
-                print 'Completed on run {}'.format(run)
-                print 'dqmin / Qmin * 100 =  {0:.2f}'.format((largest_dq_flow_rate /
-                                                              np.min(self.smallest_flow_rate)) * 100)
+                print('Completed on run {}'.format(run))
+                print('dqmin / Qmin * 100 =  {0:.2f}'.format((largest_dq_flow_rate /
+                                                              np.min(self.smallest_flow_rate)) * 100))
                 for k, l in enumerate(loops):
-                    print 'the corrected loops {} are \n {}'.format(k, l)
+                    print('the corrected loops {} are \n {}'.format(k, l))
                 break
             else:
-                print 'Not Done {}'.format(run)
+                print('Not Done {}'.format(run))
                 pass
-        return self.loops, self.dqs
+        return self.loops, self.delta_Qs
 
     def save_flows_to_file(self):
         with pd.ExcelWriter('Data/Hardy_Cross_network_flow_output.xlsx') as writer:
-            for t, sheet in enumerate(sheet_name_list):
+            for t, sheet in enumerate(loop_name_list):
                 self.loops[t].to_excel(writer, sheet_name=sheet, index=None)
 
 
@@ -137,7 +137,7 @@ def diameter(q, velocity_for_diameter=0.8, show=0):
     """
     theoretical_diameter = np.sqrt((4 * np.abs(q) * 10 ** -3) / (np.pi * velocity_for_diameter)) * 10 ** 3
     if show:
-        print 'The Theoretical Diameter is {}'.format(theoretical_diameter)
+        print('The Theoretical Diameter is {}'.format(theoretical_diameter))
     available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
     for i, D in enumerate(available_diameters):
         if D < theoretical_diameter:
@@ -153,7 +153,7 @@ def u(q, d):
     denominator = ((d*10**-3) ** 2) * np.pi
     return numerator / denominator
 
-
+"""
 if __name__ == '__main__':
     hc = HardyCross(loops)
     hc.initial_operations()
@@ -161,4 +161,5 @@ if __name__ == '__main__':
     hc.run_hc()
     hc.save_flows_to_file()
 
-raw_input("Press enter to quit.")
+    input("Press enter to quit.")
+"""
