@@ -26,18 +26,28 @@ class HardyCross(object):
         self.max_velocity = 2.0
         self.min_velocity = 0.6
 
-    def sort_edge_names_and_compute_pipe_diameters(self):
-
+    def compute_pipe_diameter_of_each_loop(self):
         for loop in self.loops:
             for i, Q in enumerate(loop['Q']):
                 loop['D'][i] = diameter(loop['Q'][i])
 
+    def compute_velocities_of_each_loop(self):
+        velocities = []
+        for loop in self.loops:
+            velocities.append(abs(velocity(loop['Q'], loop['D'])))
+        return velocities
+
+    def sort_edge_names(self):
         for i, loop in enumerate(self.loops):
             for j, section in enumerate(loop['Section']):
                 loop['Section'][j] = add_string_from_list(*sorted(re.findall('[A-Z]', section)))
 
     def locate_common_loops(self):
-
+        '''
+        this method locates the common edges and for each loop it creates a sparce matrix/array where the common edge/s
+        is symbolized by the number 1. each matrix later will be multiplied (dot) by the delta_Qs.
+        :return: None
+        '''
         for loop in self.loops:
             self.common_loops.append(np.zeros((loop.shape[0], len(self.loops))))
 
@@ -53,13 +63,8 @@ class HardyCross(object):
                                 print('loop {} @location {}, loop {} @location {} '.format(i, k, j, l))
                                 self.common_loops[i][k][j] = 1
 
-    def compute_velocities_of_each_loop(self):
-        velocities = []
-        for loop in self.loops:
-            velocities.append(abs(velocity(loop['Q'], loop['D'])))
-        return velocities
-
     def run_hc(self):
+        self.compute_pipe_diameter_of_each_loop()
         for run in range(self.runs):
             for i, loop in enumerate(self.loops):
                 # perform initial calculations
@@ -164,7 +169,7 @@ def velocity(flow_rate, pipe_diameter):
 
 if __name__ == '__main__':
     hc = HardyCross(loops_from_input_file)
-    hc.sort_edge_names_and_compute_pipe_diameters()
+    hc.sort_edge_names()
     hc.locate_common_loops()
     hc.run_hc()
     hc.save_flows_to_file()
