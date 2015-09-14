@@ -4,10 +4,10 @@ import pandas as pd
 
 loop_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
 
-loops = []
+loops_from_input_file = []
 
 for loop_name in loop_name_list:
-    loops.append(pd.read_excel('Data/Hardy_Cross_input.xlsx', sheetname=loop_name))
+    loops_from_input_file.append(pd.read_excel('Data/Hardy_Cross_input.xlsx', sheetname=loop_name))
 
 
 class HardyCross(object):
@@ -42,8 +42,8 @@ class HardyCross(object):
     def locate_common_loops(self):
         for loop in self.loops:
             self.common_loops.append(np.zeros((loop.shape[0], len(self.loops))))
-        for i, loop in enumerate(loops):
-            for j, loop in enumerate(loops):
+        for i, loop in enumerate(loops_from_input_file):
+            for j, loop in enumerate(loops_from_input_file):
                 if i == j:
                     continue
                 else:
@@ -59,9 +59,9 @@ class HardyCross(object):
                 loop['J'] = j_loss_10atm(loop['D'], loop['Q'])
                 loop['hf'] = np.copysign(loop['J'] * loop['L'], loop['Q'])
                 loop['hf/Q'] = loop['hf'] / loop['Q']
-                self.delta_Qs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
+                self.delta_Qs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] + self.delta_Qs[i]
-                self.delta_Qs[i] = ( flow_correction_dq(loop['hf'], loop['hf/Q']))
+                self.delta_Qs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] - np.dot(self.common_loops[i], self.delta_Qs)
                 self.smallest_flow_rate.append(np.min(np.abs(loop['Q'])))
 
@@ -70,7 +70,7 @@ class HardyCross(object):
                 print('Completed on run {}'.format(run))
                 print('dqmin / Qmin * 100 =  {0:.2f}'.format((largest_dq_flow_rate /
                                                               np.min(self.smallest_flow_rate)) * 100))
-                for k, l in enumerate(loops):
+                for k, l in enumerate(loops_from_input_file):
                     print('the corrected loops {} are \n {}'.format(k, l))
                 break
             else:
@@ -153,13 +153,11 @@ def u(q, d):
     denominator = ((d*10**-3) ** 2) * np.pi
     return numerator / denominator
 
-"""
 if __name__ == '__main__':
-    hc = HardyCross(loops)
+    hc = HardyCross(loops_from_input_file)
     hc.initial_operations()
     hc.locate_common_loops()
     hc.run_hc()
     hc.save_flows_to_file()
 
     input("Press enter to quit.")
-"""
