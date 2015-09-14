@@ -54,10 +54,10 @@ class HardyCross(object):
                                 self.common_loops[i][k][j] = 1
 
     def compute_velocities_of_each_loop(self):
-        us = []
+        velocities = []
         for loop in self.loops:
-            us.append(abs(velocity(loop['Q'], loop['D'])))
-        return us
+            velocities.append(abs(velocity(loop['Q'], loop['D'])))
+        return velocities
 
     def run_hc(self):
         for run in range(self.runs):
@@ -107,29 +107,28 @@ def add_string_from_list(*string_list):
 
 def flow_correction_dq(df_hf, df_hf_q):
     """
-
     :type df_hf_q: float
     :type df_hf: float
     """
     return -(np.sum(df_hf) / (2 * np.sum(df_hf_q)))
 
 
-def j_loss_10atm(d, q):
+def j_loss_10atm(pipe_diameter, flow_rate):
 
     """
-    :param d: float
-    :param q: float
+    :param pipe_diameter: float
+    :param flow_rate: float
     d: diameter [mm]
     q: flow rate [l/s]
     j: losses [m]
     """
-    j_losses = (8.21 * 10 ** -4) * (((d * 10 ** -3) * 0.905) ** -4.76) * (np.abs(q * 10 ** -3) ** 1.76)
+    j_losses = (8.21 * 10 ** -4) * (((pipe_diameter * 10 ** -3) * 0.905) ** -4.76) * \
+               (np.abs(flow_rate * 10 ** -3) ** 1.76)
     return j_losses
 
 
 def diameter_from_available(theoretical_diameter):
-    available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200.,
-                           225., 250., 280., 315., 355., 400.]
+    available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
     for i, D in enumerate(available_diameters):
         if D < theoretical_diameter:
             pass
@@ -139,13 +138,13 @@ def diameter_from_available(theoretical_diameter):
     return theoretical_diameter
 
 
-def diameter(q, velocity_for_diameter=0.8, show=0):
+def diameter(flow_rate, velocity_for_diameter=0.8, show=0):
     """
     Q: flow rate [l/s]
     velocity_for_diameter: flow velocity m/s
     D: diameter [mm]
     """
-    theoretical_diameter = np.sqrt((4 * np.abs(q) * 10 ** -3) / (np.pi * velocity_for_diameter)) * 10 ** 3
+    theoretical_diameter = np.sqrt((4 * np.abs(flow_rate) * 10 ** -3) / (np.pi * velocity_for_diameter)) * 10 ** 3
     if show:
         print('The Theoretical Diameter is {}'.format(theoretical_diameter))
     available_diameters = [50., 63., 75., 90., 110., 125., 140., 160., 180., 200., 225., 250., 280., 315., 355., 400.]
@@ -158,16 +157,16 @@ def diameter(q, velocity_for_diameter=0.8, show=0):
     return theoretical_diameter
 
 
-def velocity(q, d):
-    numerator = 4. * (q*10**-3)
-    denominator = ((d*10**-3) ** 2) * np.pi
+def velocity(flow_rate, pipe_diameter):
+    numerator = 4. * (flow_rate*10**-3)
+    denominator = ((pipe_diameter*10**-3) ** 2) * np.pi
     return numerator / denominator
 
 if __name__ == '__main__':
     hc = HardyCross(loops_from_input_file)
-    #hc.sort_edge_names_and_compute_pipe_diameters()
+    hc.sort_edge_names_and_compute_pipe_diameters()
     hc.locate_common_loops()
-    #hc.run_hc()
-    #hc.save_flows_to_file()
+    hc.run_hc()
+    hc.save_flows_to_file()
 
     input("Press enter to quit.")
