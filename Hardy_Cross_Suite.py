@@ -40,7 +40,6 @@ class HardyCross(object):
 
         for loop in self.loops:
             self.common_loops.append(np.zeros((loop.shape[0], len(self.loops))))
-        print(self.common_loops)
 
         # the for loops bellow create a sparse matrix were common loops are indicated
         for i, loop in enumerate(loops_from_input_file):
@@ -53,7 +52,6 @@ class HardyCross(object):
                             if section1 == section2:
                                 print('loop {} @location {}, loop {} @location {} '.format(i, k, j, l))
                                 self.common_loops[i][k][j] = 1
-        print(self.common_loops)
 
     def compute_velocities_of_each_loop(self):
         us = []
@@ -64,19 +62,23 @@ class HardyCross(object):
     def run_hc(self):
         for run in range(self.runs):
             for i, loop in enumerate(self.loops):
+                # perform initial calculations
                 loop['J'] = j_loss_10atm(loop['D'], loop['Q'])
                 loop['hf'] = np.copysign(loop['J'] * loop['L'], loop['Q'])
                 loop['hf/Q'] = loop['hf'] / loop['Q']
                 self.delta_Qs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
                 loop['Q'] = loop['Q'] + self.delta_Qs[i]
                 self.delta_Qs[i] = (flow_correction_dq(loop['hf'], loop['hf/Q']))
+
+                # do the common loop correction
                 loop['Q'] = loop['Q'] - np.dot(self.common_loops[i], self.delta_Qs)
+
                 self.smallest_flow_rate.append(np.min(np.abs(loop['Q'])))
 
-            largest_dq_flow_rate = np.max(abs(self.delta_Qs))
-            if largest_dq_flow_rate / np.min(self.smallest_flow_rate) * 100 < self.threshold:
+            largest_delta_qs_flow_rate = np.max(abs(self.delta_Qs))
+            if largest_delta_qs_flow_rate / np.min(self.smallest_flow_rate) * 100 < self.threshold:
                 print('Completed on run {}'.format(run))
-                print('dqmin / Qmin * 100 =  {0:.2f}'.format((largest_dq_flow_rate /
+                print('dqmin / Qmin * 100 =  {0:.2f}'.format((largest_delta_qs_flow_rate /
                                                               np.min(self.smallest_flow_rate)) * 100))
                 for k, l in enumerate(loops_from_input_file):
                     print('the corrected loops {} are \n {}'.format(k, l))
