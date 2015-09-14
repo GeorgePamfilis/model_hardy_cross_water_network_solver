@@ -2,6 +2,8 @@ import re
 import numpy as np
 import pandas as pd
 
+pd.options.mode.chained_assignment = None  # default 'warn'
+
 loop_name_list = pd.ExcelFile('Data/Hardy_Cross_input.xlsx').sheet_names
 
 loops_from_input_file = []
@@ -24,7 +26,8 @@ class HardyCross(object):
         self.max_velocity = 2.0
         self.min_velocity = 0.6
 
-    def initial_operations(self):
+    def sort_edge_names_and_compute_pipe_diameters(self):
+
         for loop in self.loops:
             for i, Q in enumerate(loop['Q']):
                 loop['D'][i] = diameter(loop['Q'][i])
@@ -33,17 +36,12 @@ class HardyCross(object):
             for j, section in enumerate(loop['Section']):
                 loop['Section'][j] = add_string_from_list(*sorted(re.findall('[A-Z]', section)))
 
-    def compute_speeds_for_each_loop(self):
-        us = []
-        for loop in self.loops:
-            us.append(abs(u(loop['Q'], loop['D'])))
-        return us
-
     def locate_common_loops(self):
         for loop in self.loops:
             self.common_loops.append(np.zeros((loop.shape[0], len(self.loops))))
+
         for i, loop in enumerate(loops_from_input_file):
-            for j, loop in enumerate(loops_from_input_file):
+            for j in range(len(loops_from_input_file)):
                 if i == j:
                     continue
                 else:
@@ -52,6 +50,12 @@ class HardyCross(object):
                             if section1 == section2:
                                 print('loop {} @location {}, loop {} @location {} '.format(i, k, j, l))
                                 self.common_loops[i][k][j] = 1
+
+    def compute_velocities_of_each_loop(self):
+        us = []
+        for loop in self.loops:
+            us.append(abs(velocity(loop['Q'], loop['D'])))
+        return us
 
     def run_hc(self):
         for run in range(self.runs):
@@ -148,14 +152,14 @@ def diameter(q, velocity_for_diameter=0.8, show=0):
     return theoretical_diameter
 
 
-def u(q, d):
+def velocity(q, d):
     numerator = 4. * (q*10**-3)
     denominator = ((d*10**-3) ** 2) * np.pi
     return numerator / denominator
 
 if __name__ == '__main__':
     hc = HardyCross(loops_from_input_file)
-    hc.initial_operations()
+    hc.sort_edge_names_and_compute_pipe_diameters()
     hc.locate_common_loops()
     hc.run_hc()
     hc.save_flows_to_file()
