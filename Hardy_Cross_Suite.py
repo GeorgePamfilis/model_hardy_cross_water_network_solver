@@ -37,9 +37,12 @@ class HardyCross(object):
                 loop['Section'][j] = add_string_from_list(*sorted(re.findall('[A-Z]', section)))
 
     def locate_common_loops(self):
+
         for loop in self.loops:
             self.common_loops.append(np.zeros((loop.shape[0], len(self.loops))))
+        print(self.common_loops)
 
+        # the for loops bellow create a sparse matrix were common loops are indicated
         for i, loop in enumerate(loops_from_input_file):
             for j in range(len(loops_from_input_file)):
                 if i == j:
@@ -50,6 +53,7 @@ class HardyCross(object):
                             if section1 == section2:
                                 print('loop {} @location {}, loop {} @location {} '.format(i, k, j, l))
                                 self.common_loops[i][k][j] = 1
+        print(self.common_loops)
 
     def compute_velocities_of_each_loop(self):
         us = []
@@ -159,9 +163,9 @@ def velocity(q, d):
 
 if __name__ == '__main__':
     hc = HardyCross(loops_from_input_file)
-    hc.sort_edge_names_and_compute_pipe_diameters()
+    #hc.sort_edge_names_and_compute_pipe_diameters()
     hc.locate_common_loops()
-    hc.run_hc()
-    hc.save_flows_to_file()
+    #hc.run_hc()
+    #hc.save_flows_to_file()
 
     input("Press enter to quit.")
